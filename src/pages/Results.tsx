@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getResults, getParticipants, getDisciplines, deleteResult, updateResult } from '../service/apiFacade';
 import CreateResultModal from '../components/CreateResultModal';
 import { Modal, Button, Form } from 'react-bootstrap';
+import { BiSort } from 'react-icons/bi';
 
 interface Result {
   id: number;
@@ -214,8 +215,8 @@ const Results = () => {
         <thead>
           <tr>
             <th>Navn</th>
-            <th onClick={() => handleSort('disciplineId')}>Disciplin</th>
-            <th onClick={() => handleSort('resultValue')}>Resultat</th>
+            <th onClick={() => handleSort('disciplineId')}>Disciplin <BiSort /></th>
+            <th onClick={() => handleSort('resultValue')}>Resultat <BiSort /></th>
             <th>Handlinger</th>
           </tr>
         </thead>

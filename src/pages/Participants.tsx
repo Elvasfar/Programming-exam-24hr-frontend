@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getParticipants, getDisciplines, createParticipant, deleteParticipant, updateParticipant } from '../service/apiFacade';
 import { translateGender } from '../components/TranslateGender';
 import { Button, Modal, Form } from 'react-bootstrap';
+import { BiSort } from 'react-icons/bi';
 
 interface Participant {
   id: number;
@@ -269,10 +270,10 @@ return (
       <table className="table table-striped">
         <thead>
           <tr>
-            <th onClick={() => handleSort('name')}>Navn</th>
-            <th onClick={() => handleSort('gender')}>Køn</th>
-            <th onClick={() => handleSort('age')}>Alder</th>
-            <th onClick={() => handleSort('club')}>Klub</th>
+            <th onClick={() => handleSort('name')}>Navn<BiSort /></th>
+            <th onClick={() => handleSort('gender')}>Køn<BiSort /></th>
+            <th onClick={() => handleSort('age')}>Alder<BiSort /></th>
+            <th style={{width: "20px"}} onClick={() => handleSort('club')}>Klub<BiSort /></th>
             <th>Discipliner</th>
           </tr>
         </thead>

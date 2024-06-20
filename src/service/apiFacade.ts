@@ -204,7 +204,7 @@ async function getResultById(id: number) {
 }
 
 async function createResult(result: any) {
-    const url = `${endpoint}/api/result`;
+    const url = `${endpoint}/api/results`;
     try {
         const response = await fetch(url, {
             method: "POST",
@@ -213,6 +213,7 @@ async function createResult(result: any) {
             },
             body: JSON.stringify(result),
         });
+        console.log("Request Body:", result);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }

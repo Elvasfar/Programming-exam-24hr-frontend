@@ -1,44 +1,79 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { getResults, getParticipants, getDisciplines, deleteResult, updateResult} from '../service/apiFacade';
+import CreateResultModal from '../components/CreateResultModal';
 import { Modal, Button, Form } from 'react-bootstrap';
-import { getResults, getParticipantById, getDisciplineById, updateResult, deleteResult } from '../service/apiFacade';
+
+
+interface Result {
+  id: number;
+  participantId: number;
+  disciplineId: number;
+  resultValue: string;
+}
+
+interface Participant {
+  id: number;
+  name: string;
+}
+
+interface Discipline {
+  id: number;
+  disciplineName: string;
+}
 
 const Results = () => {
-  const [results, setResults] = useState([]);
-  const [participants, setParticipants] = useState({});
-  const [disciplines, setDisciplines] = useState({});
-  const [editingResult, setEditingResult] = useState(null);
-  const [editedResultValue, setEditedResultValue] = useState('');
+  const [results, setResults] = useState<Result[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [disciplines, setDisciplines] = useState<Discipline[]>([]);
+
+  const [editingResult, setEditingResult] = useState<Result | null>(null);
+  const [editedResultValue, setEditedResultValue] = useState<string>('');
+
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
 
   useEffect(() => {
     fetchResults();
+    fetchParticipants();
+    fetchDisciplines();
   }, []);
 
   const fetchResults = async () => {
     try {
       const resultsData = await getResults();
       setResults(resultsData);
-
-      const participantIds = resultsData.map(result => result.participantId);
-      const disciplineIds = resultsData.map(result => result.disciplineId);
-
-      const participantsData = await Promise.all(participantIds.map(id => getParticipantById(id)));
-      const disciplinesData = await Promise.all(disciplineIds.map(id => getDisciplineById(id)));
-
-      const participantsMap = participantsData.reduce((acc, participant) => {
-        acc[participant.id] = participant;
-        return acc;
-      }, {});
-
-      const disciplinesMap = disciplinesData.reduce((acc, discipline) => {
-        acc[discipline.id] = discipline;
-        return acc;
-      }, {});
-
-      setParticipants(participantsMap);
-      setDisciplines(disciplinesMap);
     } catch (error) {
       console.error('Error fetching results:', error);
     }
+  };
+
+  const fetchParticipants = async () => {
+    try {
+      const participantsData = await getParticipants();
+      setParticipants(participantsData);
+    } catch (error) {
+      console.error('Error fetching participants:', error);
+    }
+  };
+
+  const fetchDisciplines = async () => {
+    try {
+      const disciplinesData = await getDisciplines();
+      setDisciplines(disciplinesData);
+    } catch (error) {
+      console.error('Error fetching disciplines:', error);
+    }
+  };
+
+  const handleCreateResult = () => {
+    setShowCreateModal(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+  };
+
+  const refreshResults = () => {
+    fetchResults();
   };
 
   const handleEditResult = (result) => {
@@ -76,44 +111,45 @@ const Results = () => {
   return (
     <div className="container mt-5 pt-5">
       <h1 style={{ marginTop: '40px' }}>Results</h1>
+      <button className="btn btn-primary mb-3" onClick={handleCreateResult}>Opret nyt resultat</button>
       <table className="table table-striped">
-        <thead>
-          <tr>
-            <th>Navn</th>
-            <th>Disciplin</th>
-            <th>Resultat</th>
-            <th>Handlinger</th>
-          </tr>
-        </thead>
-        <tbody>
-          {results.map(result => (
-            <tr key={result.id}>
-              <td>{participants[result.participantId]?.name}</td>
-              <td>{disciplines[result.disciplineId]?.disciplineName}</td>
-              <td>{result.resultValue}</td>
-              <td>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="me-2"
-                  onClick={() => handleEditResult(result)}
-                >
-                  Rediger
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => handleDeleteResult(result.id)}
-                >
-                  Slet
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  <thead>
+    <tr>
+      <th>Navn</th>
+      <th>Disciplin</th>
+      <th>Resultat</th>
+      <th>Handlinger</th>
+    </tr>
+  </thead>
+  <tbody>
+    {results.map(result => (
+      <tr key={result.id}>
+        <td>{participants[result.participantId]?.name}</td>
+        <td>{disciplines[result.disciplineId]?.disciplineName}</td>
+        <td>{result.resultValue}</td>
+        <td>
+          <Button
+            variant="primary"
+            size="sm"
+            className="me-2"
+            onClick={() => handleEditResult(result)}
+          >
+            Rediger
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => handleDeleteResult(result.id)}
+          >
+            Slet
+          </Button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
 
-      {/* Edit Result Modal */}
+        {/* Edit Result Modal */}
       <Modal show={!!editingResult} onHide={handleCloseModal}>
         <Modal.Header closeButton>
           <Modal.Title>Rediger Resultat</Modal.Title>
@@ -139,6 +175,15 @@ const Results = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Create Result Modal */}
+      <CreateResultModal
+        show={showCreateModal}
+        onClose={handleCloseCreateModal}
+        refreshResults={refreshResults}
+        participants={participants}
+        disciplines={disciplines}
+      />
     </div>
   );
 };

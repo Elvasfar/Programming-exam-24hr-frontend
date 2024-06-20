@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { getParticipants, getDisciplines } from '../service/apiFacade';
+import { getParticipants, getDisciplines, createParticipant, deleteParticipant } from '../service/apiFacade';
 import { translateGender } from '../components/TranslateGender';
+import { Button, Modal, Form } from 'react-bootstrap';
 
 interface Participant {
   id: number;
@@ -19,7 +20,20 @@ interface Discipline {
 
 const Participants = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [disciplines, setDisciplines] = useState<Map<number, string>>(new Map());
+  const [disciplines, setDisciplines] = useState<Discipline[]>([]);
+  const [disciplineMap, setDisciplineMap] = useState<Map<number, string>>(new Map());
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  
+  const [newParticipant, setNewParticipant] = useState<Partial<Participant>>({
+    name: '',
+    gender: '',
+    age: 0,
+    club: '',
+    disciplineIds: [],
+  });
   const [sortConfig, setSortConfig] = useState<{ key: keyof Participant | null, direction: 'ascending' | 'descending' }>({ key: null, direction: 'ascending' });
 
   const [filters, setFilters] = useState({
@@ -43,11 +57,12 @@ const Participants = () => {
     async function fetchDisciplines() {
       try {
         const data = await getDisciplines();
+        setDisciplines(data);
         const disciplineMap = new Map();
         data.forEach((discipline: Discipline) => {
           disciplineMap.set(discipline.id, discipline.disciplineName);
         });
-        setDisciplines(disciplineMap);
+        setDisciplineMap(disciplineMap);
       } catch (error) {
         console.error("Error fetching disciplines:", error);
       }
@@ -58,7 +73,7 @@ const Participants = () => {
   }, []);
 
   const getDisciplineNames = (ids: number[]) => {
-    return ids.map(id => disciplines.get(id)).filter(name => name).join(', ');
+    return ids.map(id => disciplineMap.get(id)).filter(name => name).join(', ');
   };
 
   const handleSort = (key: keyof Participant) => {
@@ -130,10 +145,61 @@ const Participants = () => {
 
   const uniqueClubs = Array.from(new Set(participants.map(p => p.club)));
 
-  return (
+  const handleCreateParticipant = async () => {
+    try {
+      await createParticipant(newParticipant as Participant);
+      const updatedParticipants = await getParticipants();
+      setParticipants(updatedParticipants);
+      setShowCreateModal(false);
+      setNewParticipant({
+        name: '',
+        gender: '',
+        age: 0,
+        club: '',
+        disciplineIds: [],
+      });
+    } catch (error) {
+      console.error('Error creating participant:', error);
+    }
+  };
+
+// Function to handle updating a participant
+const handleUpdateParticipant = async () => {
+  try {
+    // Call API to update participant using selectedParticipant data
+    // After successful update, fetch updated participants and set them
+    const updatedParticipants = await getParticipants();
+    setParticipants(updatedParticipants);
+    setShowUpdateModal(false); // Close the update modal
+    setSelectedParticipant(null); // Clear selected participant
+  } catch (error) {
+    console.error('Error updating participant:', error);
+    // Handle error state or display error message to the user
+  }
+};
+
+// Function to handle deleting a participant
+const handleDeleteParticipant = async (id) => {
+  try {
+      await deleteParticipant(id);
+      // Update frontend state after successful deletion
+      setParticipants(participants.filter(p => p.id !== id));
+  } catch (error) {
+      console.error("Error deleting participant:", error);
+      // Handle specific error cases if needed
+      if (error.response && error.response.status === 404) {
+          // Participant not found error handling
+          alert("Participant not found for deletion.");
+      } else {
+          alert("Failed to delete participant. Please try again later.");
+      }
+  }
+};
+return (
     <div className="container mt-5 pt-5">
-      <h1 style={{ marginTop: "40px" }}>Deltagere</h1>
-      
+      <h1 style={{ marginTop: '40px' }}>Deltagere</h1>
+      <Button className="mb-3" onClick={() => setShowCreateModal(true)}>Opret ny deltager</Button>
+
       <div className="mb-4">
         <h5 style={{marginTop: "20px"}}>Søg:</h5>
         <input
@@ -166,7 +232,7 @@ const Participants = () => {
         <label className="me-2">Discipliner:</label>
         <select name="discipline" onChange={handleFilterChange} className="me-3">
           <option value="">Alle</option>
-          {Array.from(disciplines.entries()).map(([id, name]) => (
+          {Array.from(disciplineMap.entries()).map(([id, name]) => (
             <option key={id} value={name}>{name}</option>
           ))}
         </select>
@@ -191,17 +257,120 @@ const Participants = () => {
           </tr>
         </thead>
         <tbody>
-          {sortedParticipants.map((participant) => (
-            <tr key={participant.id}>
-              <td>{participant.name}</td>
-              <td>{translateGender(participant.gender)}</td>
-              <td>{participant.age}</td>
-              <td>{participant.club}</td>
-              <td>{getDisciplineNames(participant.disciplineIds)}</td>
-            </tr>
+        {sortedParticipants.map((participant) => (
+  <tr key={participant.id}>
+    <td>{participant.name}</td>
+    <td>{translateGender(participant.gender)}</td>
+    <td>{participant.age}</td>
+    <td>{participant.club}</td>
+    <td>{getDisciplineNames(participant.disciplineIds)}</td>
+    <td>
+      <Button variant="primary" onClick={() => {
+        setSelectedParticipant(participant);
+        setShowUpdateModal(true);
+      }}>Opdater</Button>
+      <Button variant="danger" onClick={() => handleDeleteParticipant(participant.id)}>Slet</Button>
+    </td>
+  </tr>
           ))}
         </tbody>
       </table>
+
+      // Update Participant Modal or Form
+<Modal show={showUpdateModal} onHide={() => setShowUpdateModal(false)}>
+  <Modal.Header closeButton>
+    <Modal.Title>Opdater deltager</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    {/* Render form or inputs to update participant details */}
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={() => setShowUpdateModal(false)}>
+      Annuller
+    </Button>
+    <Button variant="primary" onClick={handleUpdateParticipant}>
+      Gem ændringer
+    </Button>
+  </Modal.Footer>
+</Modal>
+
+      <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Opret ny deltager</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group controlId="participantName">
+              <Form.Label>Navn</Form.Label>
+              <Form.Control
+                type="text"
+                value={newParticipant.name}
+                onChange={(e) => setNewParticipant({ ...newParticipant, name: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="participantGender">
+              <Form.Label>Køn</Form.Label>
+              <Form.Control
+                type="text"
+                value={newParticipant.gender}
+                onChange={(e) => setNewParticipant({ ...newParticipant, gender: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="participantAge">
+              <Form.Label>Alder</Form.Label>
+              <Form.Control
+                type="number"
+                value={newParticipant.age}
+                onChange={(e) => setNewParticipant({ ...newParticipant, age: Number(e.target.value) })}
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="participantClub">
+              <Form.Label>Klub</Form.Label>
+              <Form.Control
+                type="text"
+                value={newParticipant.club}
+                onChange={(e) => setNewParticipant({ ...newParticipant, club: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="participantDisciplines">
+              <Form.Label>Discipliner</Form.Label>
+              <Form.Control
+  as="select"
+  multiple
+  value={newParticipant.disciplineIds.map(String)} // Convert number array to string array
+  onChange={(e) => {
+    const selectedValues: number[] = [];
+    for (let i = 0; i < e.target.options.length; i++) {
+      if (e.target.options[i].selected) {
+        selectedValues.push(Number(e.target.options[i].value));
+      }
+    }
+    setNewParticipant({ ...newParticipant, disciplineIds: selectedValues });
+  }}
+  required
+>
+  {disciplines.map((discipline) => (
+    <option key={discipline.id} value={discipline.id}>
+      {discipline.disciplineName}
+    </option>
+  ))}
+</Form.Control>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
+            Annuller
+          </Button>
+          <Button variant="primary" onClick={handleCreateParticipant}>
+            Opret
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

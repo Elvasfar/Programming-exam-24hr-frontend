@@ -35,6 +35,30 @@ async function getParticipants() {
     }
 }
 
+async function createParticipant(participant: Participant) {
+    
+    const url = `${endpoint}/api/participants`;
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(participant),
+        });
+        console.log("Request Body:", participant);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        // console.log("Created result:", data);
+        return data;
+    } catch (error) {
+        console.error("Error creating result:", error);
+        throw error;
+    }
+}
+
 async function getParticipantById(id: number) {
     const url = `${endpoint}/api/participants/${id}`;
     try {
@@ -52,7 +76,7 @@ async function getParticipantById(id: number) {
 }
 
 async function updateParticipant(id: number, participant: Participant) {
-    const url = `${endpoint}/api/participant/${id}`;
+    const url = `${endpoint}/api/participants/${id}`;
     try {
         const response = await fetch(url, {
             method: "PUT",
@@ -74,7 +98,7 @@ async function updateParticipant(id: number, participant: Participant) {
 }
 
 async function deleteParticipant(id: number) {
-    const url = `${endpoint}/api/participant/${id}`;
+    const url = `${endpoint}/api/participants/${id}`;
     try {
         const response = await fetch(url, {
             method: "DELETE",
@@ -264,4 +288,4 @@ async function deleteResult(id: number) {
     }
 }
 
-export { getParticipants, getParticipantById, updateParticipant, deleteParticipant, getDisciplines, getDisciplineById, createDiscipline, updateDiscipline, getResults, getResultById, createResult, updateResult, deleteResult };
+export { createParticipant, getParticipants, getParticipantById, updateParticipant, deleteParticipant, getDisciplines, getDisciplineById, createDiscipline, updateDiscipline, getResults, getResultById, createResult, updateResult, deleteResult };

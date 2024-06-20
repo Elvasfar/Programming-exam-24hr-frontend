@@ -3,7 +3,6 @@ import { getParticipants, getDisciplines, createParticipant, deleteParticipant, 
 import { translateGender } from '../components/TranslateGender';
 import { Button, Modal, Form } from 'react-bootstrap';
 import { BiSort } from 'react-icons/bi';
-
 interface Participant {
   id: number;
   name: string;
@@ -216,6 +215,7 @@ const handleDeleteParticipant = async (id) => {
       }
   }
 };
+
 return (
     <div className="container mt-5 pt-5">
       <h1 style={{ marginTop: '40px' }}>Deltagere</h1>

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { getResults, getParticipants, getDisciplines, deleteResult, updateResult} from '../service/apiFacade';
+import { getResults, getParticipants, getDisciplines, deleteResult, updateResult } from '../service/apiFacade';
 import CreateResultModal from '../components/CreateResultModal';
 import { Modal, Button, Form } from 'react-bootstrap';
-
 
 interface Result {
   id: number;
@@ -14,6 +13,8 @@ interface Result {
 interface Participant {
   id: number;
   name: string;
+  gender: string;
+  age: number;
 }
 
 interface Discipline {
@@ -30,6 +31,14 @@ const Results = () => {
   const [editedResultValue, setEditedResultValue] = useState<string>('');
 
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Result | null, direction: 'ascending' | 'descending' }>({ key: null, direction: 'ascending' });
+
+  const [filters, setFilters] = useState({
+    disciplineId: '',
+    gender: '',
+    ageGroup: '',
+  });
 
   useEffect(() => {
     fetchResults();
@@ -76,7 +85,7 @@ const Results = () => {
     fetchResults();
   };
 
-  const handleEditResult = (result) => {
+  const handleEditResult = (result: Result) => {
     setEditingResult(result);
     setEditedResultValue(result.resultValue);
   };
@@ -94,7 +103,7 @@ const Results = () => {
     }
   };
 
-  const handleDeleteResult = async (id) => {
+  const handleDeleteResult = async (id: number) => {
     try {
       await deleteResult(id);
       fetchResults();
@@ -108,48 +117,137 @@ const Results = () => {
     setEditedResultValue('');
   };
 
+  const handleSort = (key: keyof Result) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      [name]: value
+    }));
+  };
+
+  const filteredResults = results.filter(result => {
+    if (filters.disciplineId && result.disciplineId !== parseInt(filters.disciplineId)) {
+      return false;
+    }
+
+    const participant = participants.find(p => p.id === result.participantId);
+    if (!participant) return false;
+
+    if (filters.gender && participant.gender !== filters.gender) {
+      return false;
+    }
+
+    if (filters.ageGroup) {
+      const age = participant.age;
+      if (filters.ageGroup === '6-9' && (age < 6 || age > 9)) return false;
+      if (filters.ageGroup === '10-13' && (age < 10 || age > 13)) return false;
+      if (filters.ageGroup === '14-22' && (age < 14 || age > 22)) return false;
+      if (filters.ageGroup === '23-40' && (age < 23 || age > 40)) return false;
+      if (filters.ageGroup === '41-' && age < 41) return false;
+    }
+
+    return true;
+  });
+
+  const sortedResults = React.useMemo(() => {
+    let sortableResults = [...filteredResults];
+    if (sortConfig.key !== null) {
+      sortableResults.sort((a, b) => {
+        const aValue = a[sortConfig.key!];
+        const bValue = b[sortConfig.key!];
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableResults;
+  }, [filteredResults, sortConfig]);
+
   return (
     <div className="container mt-5 pt-5">
       <h1 style={{ marginTop: '40px' }}>Results</h1>
-      <button className="btn btn-primary mb-3" onClick={handleCreateResult}>Opret nyt resultat</button>
-      <table className="table table-striped">
-  <thead>
-    <tr>
-      <th>Navn</th>
-      <th>Disciplin</th>
-      <th>Resultat</th>
-      <th>Handlinger</th>
-    </tr>
-  </thead>
-  <tbody>
-    {results.map(result => (
-      <tr key={result.id}>
-        <td>{participants[result.participantId]?.name}</td>
-        <td>{disciplines[result.disciplineId]?.disciplineName}</td>
-        <td>{result.resultValue}</td>
-        <td>
-          <Button
-            variant="primary"
-            size="sm"
-            className="me-2"
-            onClick={() => handleEditResult(result)}
-          >
-            Rediger
-          </Button>
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => handleDeleteResult(result.id)}
-          >
-            Slet
-          </Button>
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
+      <button className="btn btn-primary mb-3" onClick={handleCreateResult}>Opret Nyt Resultat</button>
 
-        {/* Edit Result Modal */}
+      <div className="mb-4">
+        <h5>Filtre:</h5>
+
+        <label className="me-2">Disciplin:</label>
+        <select name="disciplineId" onChange={handleFilterChange} className="me-3">
+          <option value="">Alle</option>
+          {disciplines.map(discipline => (
+            <option key={discipline.id} value={String(discipline.id)}>{discipline.disciplineName}</option>
+          ))}
+        </select>
+
+        <label className="me-2">Køn:</label>
+        <select name="gender" onChange={handleFilterChange} className="me-3">
+          <option value="">Alle</option>
+          <option value="Male">Mand</option>
+          <option value="Female">Kvinde</option>
+        </select>
+
+        <label className="me-2">Aldersgruppe:</label>
+        <select name="ageGroup" onChange={handleFilterChange} className="me-3">
+          <option value="">Alle</option>
+          <option value="6-9">6-9</option>
+          <option value="10-13">10-13</option>
+          <option value="14-22">14-22</option>
+          <option value="23-40">23-40</option>
+          <option value="41-">41+</option>
+        </select>
+      </div>
+
+      <table className="table table-striped">
+        <thead>
+          <tr>
+            <th>Navn</th>
+            <th onClick={() => handleSort('disciplineId')}>Disciplin</th>
+            <th onClick={() => handleSort('resultValue')}>Resultat</th>
+            <th>Handlinger</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sortedResults.map(result => (
+            <tr key={result.id}>
+              <td>{participants.find(p => p.id === result.participantId)?.name}</td>
+              <td>{disciplines.find(d => d.id === result.disciplineId)?.disciplineName}</td>
+              <td>{result.resultValue}</td>
+              <td>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="me-2"
+                  onClick={() => handleEditResult(result)}
+                >
+                  Rediger
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => handleDeleteResult(result.id)}
+                >
+                  Slet
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Edit Result Modal */}
       <Modal show={!!editingResult} onHide={handleCloseModal}>
         <Modal.Header closeButton>
           <Modal.Title>Rediger Resultat</Modal.Title>

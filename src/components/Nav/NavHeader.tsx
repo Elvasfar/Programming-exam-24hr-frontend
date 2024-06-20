@@ -19,22 +19,22 @@ export default function NavHeader() {
                             <Offcanvas.Body>
                                 <Nav className="my-2 my-lg-0 gap-3">
                                     <NavLink
-                                        to="/something"
+                                        to="/participants"
                                         className="text-light me-2 text-decoration-none d-flex align-items-center"
                                     >
-                                        Something
+                                        Deltagere
                                     </NavLink>
                                     <NavLink
-                                        to="/something2"
+                                        to="/disciplines"
                                         className="text-light me-2 text-decoration-none d-flex align-items-center"
                                     >
-                                        Something 2
+                                        Discipliner
                                     </NavLink>
                                     <NavLink
-                                        to="/something3"
+                                        to="/results"
                                         className="text-light me-2 text-decoration-none d-flex align-items-center"
                                     >
-                                        Something 3
+                                        Resultater
                                     </NavLink>
                                 </Nav>
                             </Offcanvas.Body>

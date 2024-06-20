@@ -1,4 +1,4 @@
-const endpoint = "https://localhost:8080";
+const endpoint = "http://localhost:8080";
 
 interface Participant {
     id: number;
@@ -14,8 +14,6 @@ interface Discipline {
     id: number;
     disciplineName: string;
     resultType: string;
-    participantIds: number[];
-    results: null;
 }
 
 
@@ -32,7 +30,7 @@ async function getParticipants() {
         // console.log("Products:", data); // Log the fetched data
         return data; // Return the fetched data
     } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Error fetching participant:", error);
         throw error;
     }
 }
@@ -86,7 +84,7 @@ async function deleteParticipant(id: number) {
         }
         // console.log("Deleted product:", id);
     } catch (error) {
-        console.error("Error deleting product:", error);
+        console.error("Error deleting participant:", error);
         throw error;
     }
 }
@@ -105,7 +103,7 @@ async function getDisciplines() {
         // console.log("Categories:", data); // Log the fetched data
         return data; // Return the fetched data
     } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error("Error fetching disciplines:", error);
         throw error;
     }
 }
@@ -228,7 +226,7 @@ async function createResult(result: any) {
 }
 
 async function updateResult(id: number, result: any) {
-    const url = `${endpoint}/api/result/${id}`;
+    const url = `${endpoint}/api/results/${id}`;
     try {
         const response = await fetch(url, {
             method: "PUT",
@@ -250,7 +248,7 @@ async function updateResult(id: number, result: any) {
 }
 
 async function deleteResult(id: number) {
-    const url = `${endpoint}/api/result/${id}`;
+    const url = `${endpoint}/api/results/${id}`;
     try {
         const response = await fetch(url, {
             method: "DELETE",

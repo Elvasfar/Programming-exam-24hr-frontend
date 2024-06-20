@@ -1,30 +1,49 @@
 import React, { useEffect, useState } from 'react';
-import { getDisciplines } from '../service/apiFacade';
+import { getDisciplines, getParticipants } from '../service/apiFacade';
 
 interface Discipline {
   id: number;
   disciplineName: string;
   resultType: string;
-  participantIds: number[];
   results: null;
+}
+
+interface Participant {
+  id: number;
+  name: string;
+  gender: string;
+  age: number;
+  club: string;
+  disciplineIds: number[];
 }
 
 const Disciplines = () => {
   const [disciplines, setDisciplines] = useState<Discipline[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
 
   useEffect(() => {
-    async function fetchDisciplinesData() {
+    async function fetchData() {
       try {
-        const data = await getDisciplines();
-        setDisciplines(data);
+        const disciplinesData = await getDisciplines();
+        setDisciplines(disciplinesData);
+        
+        const participantsData = await getParticipants();
+        setParticipants(participantsData);
       } catch (error) {
-        console.error('Error fetching disciplines:', error);
+        console.error('Error fetching data:', error);
       }
     }
 
-    fetchDisciplinesData();
+    fetchData();
   }, []);
 
+  const getParticipantNamesForDiscipline = (disciplineId: number) => {
+    const participantsInDiscipline = participants.filter(participant => 
+      participant.disciplineIds.includes(disciplineId)
+    );
+
+    return participantsInDiscipline.map(p => p.name).join(', ');
+  };
 
   return (
     <div className="container mt-5 pt-5">
@@ -34,14 +53,14 @@ const Disciplines = () => {
         <thead>
           <tr>
             <th>Navn</th>
-            <th>Resultat Type</th>
+            <th>Deltagere</th>
           </tr>
         </thead>
         <tbody>
           {disciplines.map((discipline) => (
             <tr key={discipline.id}>
               <td>{discipline.disciplineName}</td>
-              <td>{discipline.resultType}</td>
+              <td>{getParticipantNamesForDiscipline(discipline.id)}</td>
             </tr>
           ))}
         </tbody>

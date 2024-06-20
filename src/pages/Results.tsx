@@ -178,7 +178,7 @@ const Results = () => {
 
   return (
     <div className="container mt-5 pt-5">
-      <h1 style={{ marginTop: '40px' }}>Results</h1>
+      <h1 style={{ marginTop: '40px' }}>Resultater</h1>
       <button className="btn btn-primary mb-3" onClick={handleCreateResult}>Opret Nyt Resultat</button>
 
       <div className="mb-4">

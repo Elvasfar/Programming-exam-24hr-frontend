@@ -7,6 +7,9 @@ export default function NavHeader() {
             <Container fluid>
                 <Row className="w-100 align-items-center">
                     <Col className="d-flex align-items-center">
+                        <div style={{ marginRight: "10px" }}>
+                            <img src="download.jpg" alt="Logo" style={{ height: "100px", marginRight: "50px" }} />
+                        </div>
                         <Navbar.Toggle aria-controls="offcanvasNavbar-expand-lg" className="ms-3" />
                         <Navbar.Offcanvas
                             id="offcanvasNavbar-expand-lg"
@@ -18,6 +21,13 @@ export default function NavHeader() {
                             <Offcanvas.Header closeButton />
                             <Offcanvas.Body>
                                 <Nav className="my-2 my-lg-0 gap-3">
+                                    <NavLink
+                                        to="/"
+                                        className="text-light me-2 text-decoration-none d-flex align-items-center"
+                                    >
+                                        Forside
+                                    </NavLink>
+
                                     <NavLink
                                         to="/participants"
                                         className="text-light me-2 text-decoration-none d-flex align-items-center"

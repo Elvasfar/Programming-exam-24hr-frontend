@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getParticipants, getDisciplines, createParticipant, deleteParticipant } from '../service/apiFacade';
+import { getParticipants, getDisciplines, createParticipant, deleteParticipant, updateParticipant } from '../service/apiFacade';
 import { translateGender } from '../components/TranslateGender';
 import { Button, Modal, Form } from 'react-bootstrap';
 
@@ -26,6 +26,8 @@ const Participants = () => {
 
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updatedParticipant, setUpdatedParticipant] = useState<Partial<Participant>>({});
+
   
   const [newParticipant, setNewParticipant] = useState<Partial<Participant>>({
     name: '',
@@ -163,21 +165,39 @@ const Participants = () => {
     }
   };
 
+// Function to handle opening the update modal with selected participant data
+const handleOpenUpdateModal = (participant: Participant) => {
+  setSelectedParticipant(participant);
+  setUpdatedParticipant({
+    id: participant.id,
+    name: participant.name,
+    gender: participant.gender,
+    age: participant.age,
+    club: participant.club,
+    disciplineIds: participant.disciplineIds.slice(), // Copy array to avoid mutating original data
+  });
+  setShowUpdateModal(true);
+};
+
 // Function to handle updating a participant
-const handleUpdateParticipant = async () => {
+const handleUpdateParticipant = async (id: number | undefined, updatedData: Partial<Participant>) => {
   try {
-    // Call API to update participant using selectedParticipant data
+    if (id === undefined) {
+      console.error('Participant ID is missing.');
+      return;
+    }
+    await updateParticipant(id, updatedData);
     // After successful update, fetch updated participants and set them
     const updatedParticipants = await getParticipants();
     setParticipants(updatedParticipants);
     setShowUpdateModal(false); // Close the update modal
     setSelectedParticipant(null); // Clear selected participant
+    setUpdatedParticipant({}); // Clear updated participant state
   } catch (error) {
     console.error('Error updating participant:', error);
     // Handle error state or display error message to the user
   }
 };
-
 // Function to handle deleting a participant
 const handleDeleteParticipant = async (id) => {
   try {
@@ -265,35 +285,92 @@ return (
     <td>{participant.club}</td>
     <td>{getDisciplineNames(participant.disciplineIds)}</td>
     <td>
-      <Button variant="primary" onClick={() => {
-        setSelectedParticipant(participant);
-        setShowUpdateModal(true);
-      }}>Opdater</Button>
+      <Button variant="primary" onClick={() => handleOpenUpdateModal(participant)}>Opdater</Button>
       <Button variant="danger" onClick={() => handleDeleteParticipant(participant.id)}>Slet</Button>
     </td>
   </tr>
-          ))}
-        </tbody>
-      </table>
+))}        
+</tbody>
+</table>
 
       // Update Participant Modal or Form
-<Modal show={showUpdateModal} onHide={() => setShowUpdateModal(false)}>
+      <Modal show={showUpdateModal} onHide={() => setShowUpdateModal(false)}>
   <Modal.Header closeButton>
     <Modal.Title>Opdater deltager</Modal.Title>
   </Modal.Header>
   <Modal.Body>
-    {/* Render form or inputs to update participant details */}
+    <Form>
+      <Form.Group controlId="updateParticipantName">
+        <Form.Label>Navn</Form.Label>
+        <Form.Control
+          type="text"
+          value={updatedParticipant.name || ''}
+          onChange={(e) => setUpdatedParticipant({ ...updatedParticipant, name: e.target.value })}
+          required
+        />
+      </Form.Group>
+      <Form.Group controlId="updateParticipantGender">
+        <Form.Label>Køn</Form.Label>
+        <Form.Control
+          as="select"
+          value={updatedParticipant.gender || ''}
+          onChange={(e) => setUpdatedParticipant({ ...updatedParticipant, gender: e.target.value })}
+          required
+        >
+          <option value="Male">Mand</option>
+          <option value="Female">Kvinde</option>
+        </Form.Control>
+      </Form.Group>
+      <Form.Group controlId="updateParticipantAge">
+        <Form.Label>Alder</Form.Label>
+        <Form.Control
+          type="number"
+          value={updatedParticipant.age || 0}
+          onChange={(e) => setUpdatedParticipant({ ...updatedParticipant, age: Number(e.target.value) })}
+          required
+        />
+      </Form.Group>
+      <Form.Group controlId="updateParticipantClub">
+        <Form.Label>Klub</Form.Label>
+        <Form.Control
+          type="text"
+          value={updatedParticipant.club || ''}
+          onChange={(e) => setUpdatedParticipant({ ...updatedParticipant, club: e.target.value })}
+          required
+        />
+      </Form.Group>
+      <Form.Group controlId="updateParticipantDisciplines">
+        <Form.Label>Discipliner</Form.Label>
+        <Form.Control
+          as="select"
+          multiple
+          value={updatedParticipant.disciplineIds || []}
+          onChange={(e) => {
+            const selectedValues = Array.from(e.target.options)
+              .filter(option => option.selected)
+              .map(option => Number(option.value));
+            setUpdatedParticipant({ ...updatedParticipant, disciplineIds: selectedValues });
+          }}
+          required
+        >
+          {disciplines.map((discipline) => (
+            <option key={discipline.id} value={discipline.id}>
+              {discipline.disciplineName}
+            </option>
+          ))}
+        </Form.Control>
+      </Form.Group>
+    </Form>
   </Modal.Body>
   <Modal.Footer>
     <Button variant="secondary" onClick={() => setShowUpdateModal(false)}>
       Annuller
     </Button>
-    <Button variant="primary" onClick={handleUpdateParticipant}>
+    <Button variant="primary" onClick={() => handleUpdateParticipant(selectedParticipant?.id, updatedParticipant)}>
       Gem ændringer
     </Button>
   </Modal.Footer>
 </Modal>
-
       <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Opret ny deltager</Modal.Title>

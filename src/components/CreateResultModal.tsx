@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { createResult } from '../service/apiFacade';
 import { ModalBody } from 'react-bootstrap';
 
+
+
 interface Props {
   show: boolean;
   onClose: () => void;
@@ -75,6 +77,7 @@ const CreateResultModal: React.FC<Props> = ({ show, onClose, refreshResults, par
                   {participants.map(participant => (
                     <option key={participant.id} value={participant.id}>{participant.name}</option>
                   ))}
+                  Se
                 </select>
               </div>
               <div className="mb-3">
